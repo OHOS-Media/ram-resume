@@ -20,6 +20,7 @@ const Accordion = ({ data, variant = "faq", onCopy }) => {
           onToggle={() => handleToggle(index)}
           variant={variant}
           onCopy={onCopy}
+          isFirst={index === 0}
         />
       ))}
     </div>

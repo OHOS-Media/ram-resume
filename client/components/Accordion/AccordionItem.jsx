@@ -1,7 +1,16 @@
 import { IconMinus, IconPlus } from "@tabler/icons-react";
 import CopyButton from "./CopyButton";
 
-const AccordionItem = ({ title, content, bulletPoints, isOpen, onToggle, variant, onCopy }) => {
+const AccordionItem = ({
+  title,
+  content,
+  bulletPoints,
+  isOpen,
+  onToggle,
+  variant,
+  onCopy,
+  isFirst,
+}) => {
   const handleCopy = async () => {
     const textToCopy = bulletPoints ? bulletPoints.join("\n") : content;
     await navigator.clipboard.writeText(textToCopy);
@@ -29,7 +38,7 @@ const AccordionItem = ({ title, content, bulletPoints, isOpen, onToggle, variant
         </h3>
         <div className="flex items-center gap-2">
           {/* Copy button - only show in toolbox variant when section is open */}
-          {variant === "toolbox" && isOpen && <CopyButton onCopy={handleCopy} />}
+          {variant === "toolbox" && isOpen && <CopyButton onCopy={handleCopy} isFirst={isFirst} />}
 
           {/* Toggle button - onClick moved here */}
           <button

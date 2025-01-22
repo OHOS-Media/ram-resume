@@ -4,7 +4,7 @@ import Button from "@/components/ui/Button";
 import FileUpload from "@/components/ui/FileUpload";
 import { useApi } from "@/hooks/useApi";
 
-export default function ResumeModal({ active, setActive }) {
+export default function ResumeModal({ active, setActive, onResumeUpdate }) {
   const [showUpload, setShowUpload] = useState(false);
   const [resume, setResume] = useState(null);
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -13,7 +13,7 @@ export default function ResumeModal({ active, setActive }) {
   const fetchResume = async () => {
     try {
       const response = await api.request("/api/files");
-      setResume(response[0]); // Assuming the latest resume is first
+      setResume(response[0]);
     } catch (error) {
       console.error("Error fetching resume:", error);
     }
@@ -78,6 +78,9 @@ export default function ResumeModal({ active, setActive }) {
   const handleUploadSuccess = () => {
     setShowUpload(false);
     fetchResume();
+    if (onResumeUpdate) {
+      onResumeUpdate();
+    }
   };
 
   return (

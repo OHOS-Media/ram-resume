@@ -6,10 +6,10 @@ import Notification from "../ui/Notification";
 
 function MainToolbox({
   decrementStep,
-  incrementStep,
   activeStep,
   renderStep,
   handleSubmit,
+  handleFormReset,
   loading,
 }) {
   const { usageError, checkUsage } = useAuth();
@@ -38,7 +38,7 @@ function MainToolbox({
         return [
           {
             text: "Enhance resume",
-            onClick: () => incrementStep(),
+            onClick: handleButtonClick,
           },
         ];
       case 3:
@@ -59,7 +59,7 @@ function MainToolbox({
         return [
           {
             text: "Start over",
-            onClick: () => decrementStep(4),
+            onClick: handleButtonClick,
           },
         ];
       default:

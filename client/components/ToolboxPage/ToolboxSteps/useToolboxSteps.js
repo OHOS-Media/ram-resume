@@ -23,7 +23,7 @@ export const useToolboxSteps = ({ state, updateState, navigateStep }) => {
       2: (
         <ToolboxStep2
           keywords={state.keywords}
-          setExitModalActive={(value) => updateState({ exitModalActive: value })}
+          setConfirmationModalActive={(value) => updateState({ confirmationModalActive: value })}
           incrementStep={() => navigateStep("next")}
         />
       ),

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useApi } from "@/hooks/useApi";
 import { IconFile, IconUpload, IconX } from "@tabler/icons-react";
 import Button from "@/components/ui/Button";
@@ -25,24 +25,28 @@ Exclude sections like:
 
 as they typically don't highlight specific skills. Only resumes in English, please.`;
 
-  useEffect(() => {
-    const fetchResume = async () => {
-      try {
-        const response = await api.request("/api/files");
-
-        if (response?.[0]) {
-          const pdfResponse = await api.request("/api/files/download", {
-            responseType: "blob",
-          });
-          setUploadedResume(pdfResponse);
-          setResumeInfo(response[0]);
-        }
-      } catch (error) {
-        console.error("Error fetching resume:", error);
+  const fetchResume = useCallback(async () => {
+    try {
+      const response = await api.request("/api/files");
+      if (response?.[0]) {
+        const pdfResponse = await api.request("/api/files/download", {
+          responseType: "blob",
+        });
+        setUploadedResume(pdfResponse);
+        setResumeInfo(response[0]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching resume:", error);
+    }
+  }, []);
+
+  useEffect(() => {
     fetchResume();
-  }, [resume, uploadedResume]);
+  }, [fetchResume]);
+
+  function handleResumeUpdate() {
+    fetchResume();
+  }
 
   const handleExtractText = async () => {
     if (uploadedResume) {
@@ -85,7 +89,11 @@ as they typically don't highlight specific skills. Only resumes in English, plea
             />
           </div>
           {resumeModalActive && (
-            <ResumeModal active={resumeModalActive} setActive={setResumeModalActive} />
+            <ResumeModal
+              active={resumeModalActive}
+              setActive={setResumeModalActive}
+              onResumeUpdate={handleResumeUpdate}
+            />
           )}
         </div>
       )}

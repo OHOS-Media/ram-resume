@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { IconCopy } from "@tabler/icons-react";
 
-const CopyButton = ({ onCopy }) => {
+const CopyButton = ({ onCopy, isFirst }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipText, setTooltipText] = useState("Copy all bullet points");
   const timeoutRef = useRef(null);
@@ -27,9 +27,17 @@ const CopyButton = ({ onCopy }) => {
     <div className="relative">
       {/* Custom Tooltip */}
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-4 bg-[#1B1B1B] text-white text-sm rounded whitespace-nowrap">
+        <div
+          className={`absolute ${
+            isFirst ? "top-full mt-3" : "bottom-full mb-3"
+          } left-1/2 -translate-x-1/2 p-4 bg-[#1B1B1B] text-white text-sm rounded whitespace-nowrap`}
+        >
           {tooltipText}
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1B1B1B] transform rotate-45" />
+          <div
+            className={`absolute ${
+              isFirst ? "-top-1" : "-bottom-1"
+            } left-1/2 -translate-x-1/2 w-2 h-2 bg-[#1B1B1B] transform rotate-45`}
+          />
         </div>
       )}
 

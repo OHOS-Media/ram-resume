@@ -4,14 +4,16 @@ import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
 import PageContainer from "@/components/PageContainer";
-import { Sidebar } from "@/components/ToolboxPage/SideBar";
+import { Sidebar } from "@/components/ToolboxPage/SideBar/SideBar";
 import MainToolbox from "@/components/ToolboxPage/MainToolbox";
 import ToolboxEnd from "@/components/ToolboxPage/ToolboxSteps/ToolboxEnd";
 import { useToolboxSteps } from "@/components/ToolboxPage/ToolboxSteps/useToolboxSteps";
-import ExitConfirmationModal from "@/components/ToolboxPage/ExitConfirmationModal";
+import ConfirmationModal from "@/components/ToolboxPage/ConfirmationModal";
 import GradientContainer from "@/components/ui/GradientContainer";
 import ScanHistory from "@/components/Profile/ScanHistory";
 import Head from "next/head";
+
+import { mockKeywords, mockBulletPoints, mockCoverLetter } from "../../server/mockdata";
 
 export default function Toolbox() {
   const { request, loading } = useApi();
@@ -21,21 +23,25 @@ export default function Toolbox() {
   const [state, setState] = useState({
     toolboxActive: true,
     activeStep: 1,
-    exitModalActive: false,
+    highestCompletedStep: 1,
+    confirmationModalActive: false,
     jobDescription: "",
     keywords: [],
     resume: "",
     company: "",
     jobTitle: "",
+    coverLetter: "",
     scanId: "",
     bulletPoints: [],
     pendingNavigation: null,
+    resetInitiated: false,
   });
 
   const {
     toolboxActive,
     activeStep,
-    exitModalActive,
+    highestCompletedStep,
+    confirmationModalActive,
     jobDescription,
     keywords,
     scanId,
@@ -44,6 +50,7 @@ export default function Toolbox() {
     company,
     jobTitle,
     pendingNavigation,
+    resetInitiated,
   } = state;
 
   const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
@@ -54,7 +61,7 @@ export default function Toolbox() {
       if (activeStep > 1) {
         // Store the navigation event
         updateState({
-          exitModalActive: true,
+          confirmationModalActive: true,
           isLeavingPage: true,
           pendingNavigation: e,
         });
@@ -72,7 +79,7 @@ export default function Toolbox() {
 
   const handleReturnBtn = () => {
     if (activeStep > 1) {
-      return updateState({ exitModalActive: true });
+      return updateState({ confirmationModalActive: true });
     } else {
       router.push("/");
     }
@@ -83,8 +90,9 @@ export default function Toolbox() {
       // If there was a pending navigation, prevent it
       state.pendingNavigation.preventDefault();
     }
+
     updateState({
-      exitModalActive: false,
+      confirmationModalActive: false,
       isLeavingPage: false,
       pendingNavigation: null,
     });
@@ -103,14 +111,18 @@ export default function Toolbox() {
 
   const navigateStep = (direction) => {
     if (direction === "next" && activeStep < 5) {
+      // If the active step is greater than or equal to the highestCompletedStep,
+      // update the highestCompleted step to be activeStep plus one
+      if (activeStep >= highestCompletedStep) {
+        updateState({ highestCompletedStep: activeStep + 1 });
+      }
       updateState({ activeStep: activeStep + 1 });
     } else if (direction === "prev" && activeStep > 1) {
       updateState({ activeStep: activeStep - 1 });
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const sendRequest = async () => {
     try {
       if (activeStep === 1) {
         const data = await request("/api/extract-keywords", {
@@ -118,26 +130,93 @@ export default function Toolbox() {
           body: JSON.stringify({ jobDescription, company, jobTitle }),
         });
         updateState({ keywords: data.keywords, scanId: data.scanId });
+
       } else if (activeStep === 3) {
         const data = await request("/api/resume", {
           method: "POST",
           body: JSON.stringify({ jobDescription, resume, scanId }),
         });
         updateState({ bulletPoints: data, scanId: data.scanId });
+
       } else if (activeStep === 4) {
         const data = await request("/api/cover-letter", {
           method: "POST",
           body: JSON.stringify({ jobDescription, resume, scanId }),
         });
         updateState({ coverLetter: data.coverLetter });
+
       }
-      navigateStep("next");
     } catch (error) {
       console.error("Request failed:", error);
       if (error.message.includes("exceeds limit")) {
         toast.error(error.message);
       }
     }
+  };
+
+  // Handles form submission by checking if a confirmation modal is needed for specific steps,
+  // updating state accordingly, and proceeding with the request and navigation if
+  // no modal is required.
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const stepsRequiringConfirmationModal = [1, 3, 4];
+
+    if (
+      (stepsRequiringConfirmationModal.includes(activeStep) && highestCompletedStep > activeStep) ||
+      activeStep === 5
+    ) {
+      updateState({ resetInitiated: true, confirmationModalActive: true });
+      return;
+    }
+
+    await sendRequest();
+    navigateStep("next");
+  };
+
+  // Resets specific form data and state based on the current step, updates the highest
+  // completed step if applicable, proceeds to the next step, and deactivates the
+  // reset and confirmation modal states.
+  const handleFormReset = async () => {
+    updateState({ resetInitiated: false, confirmationModalActive: false });
+
+    if (activeStep === 1) {
+      updateState({
+        highestCompletedStep: activeStep + 1,
+        resume: "",
+        bulletPoints: "",
+        coverLetter: "",
+      });
+    }
+
+    if (activeStep === 3) {
+      updateState({
+        highestCompletedStep: activeStep + 1,
+        coverLetter: "",
+      });
+    }
+
+    if (activeStep === 5) {
+      updateState({
+        toolboxActive: true,
+        activeStep: 1,
+        highestCompletedStep: 1,
+        confirmationModalActive: false,
+        jobDescription: "",
+        keywords: [],
+        resume: "",
+        company: "",
+        jobTitle: "",
+        coverLetter: "",
+        scanId: "",
+        bulletPoints: [],
+        pendingNavigation: null,
+        resetInitiated: false,
+      });
+    }
+
+    await sendRequest();
+    navigateStep("next");
   };
 
   useEffect(() => {
@@ -237,11 +316,13 @@ export default function Toolbox() {
           </p>
         </div>
 
-        {exitModalActive && (
-          <ExitConfirmationModal
-            setExitModalActive={(value) => updateState({ exitModalActive: value })}
+        {confirmationModalActive && (
+          <ConfirmationModal
+            setConfirmationModalActive={(value) => updateState({ confirmationModalActive: value })}
             handleDone={handleDone}
             handleCancel={handleCancel}
+            handleFormReset={handleFormReset}
+            resetInitiated={resetInitiated}
           />
         )}
 
@@ -249,9 +330,12 @@ export default function Toolbox() {
           <div className="h-[700px] w-full flex flex-row gap-6 z-10">
             <Sidebar
               activeStep={activeStep}
+              highestCompletedStep={highestCompletedStep}
               handleReturnBtn={handleReturnBtn}
-              handleDone={handleDone}
-              setExitModalActive={(value) => updateState({ exitModalActive: value })}
+              updateState={updateState}
+              setConfirmationModalActive={(value) =>
+                updateState({ confirmationModalActive: value })
+              }
             />
             <MainToolbox
               activeStep={activeStep}
@@ -260,6 +344,7 @@ export default function Toolbox() {
               renderStep={renderStep}
               handleDone={handleDone}
               handleSubmit={handleSubmit}
+              handleFormReset={handleFormReset}
               loading={loading}
             />
           </div>

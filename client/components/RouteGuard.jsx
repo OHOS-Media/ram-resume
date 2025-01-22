@@ -10,7 +10,7 @@ export default function RouteGuard({ children }) {
     if (loading) return;
 
     // Define public routes that don't need authentication
-    const publicRoutes = ["/", "/about", "/blog", "/faq", "/login"];
+    const publicRoutes = ["/", "/about", "/blog", "/frequently-asked-questions", "/login"];
     const isPublicRoute = publicRoutes.includes(router.pathname);
 
     if (!user && !isPublicRoute) {

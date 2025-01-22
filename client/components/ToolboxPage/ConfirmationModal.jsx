@@ -1,8 +1,14 @@
 import Button from "../ui/Button";
 
-export default function ExitConfirmationModal({ setExitModalActive, handleDone }) {
-  const handleCancel = () => {
-    setExitModalActive(false);
+export default function ConfirmationModal({
+  setConfirmationModalActive,
+  handleDone,
+  resetInitiated,
+  handleFormReset,
+  handleCancel,
+}) {
+  const handleClose = () => {
+    setConfirmationModalActive(false);
   };
 
   return (
@@ -21,12 +27,16 @@ export default function ExitConfirmationModal({ setExitModalActive, handleDone }
 
             <div className="flex justify-between w-full">
               <Button
-                text={"I'm Done"}
+                text={"Yes"}
                 variant="tertiary"
                 className="text-error-state"
-                onClick={handleDone}
+                onClick={resetInitiated ? handleFormReset : handleDone}
               />
-              <Button text={"Cancel"} variant="tertiary" onClick={handleCancel} />
+              <Button
+                text={"Cancel"}
+                variant="tertiary"
+                onClick={resetInitiated ? handleClose : handleCancel}
+              />
             </div>
           </div>
         </div>
